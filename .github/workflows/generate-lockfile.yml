@@ -1,26 +1,39 @@
 name: Generate lockfile
 
 on:
-  workflow_dispatch: {}   # tu le lances à la main depuis l'onglet Actions
+  workflow_dispatch: {}   # tu le lances manuellement
+
+permissions:
+  contents: write         # autorise ce workflow à pousser des commits
 
 jobs:
   gen-lock:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write    # autorise le commit
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true   # pour pousser avec GITHUB_TOKEN
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Generate package-lock.json
+      - name: Create lockfile (npm install)
+      # --no-audit et --fund=false pour éviter du bruit en CI
         run: npm install --no-audit --fund=false
 
-      - name: Commit lockfile
-        uses: EndBug/add-and-commit@v9
-        with:
-          message: "chore: add package-lock.json (generated via workflow)"
-          add: "package-lock.json"
+      - name: Show result
+        run: |
+          ls -la
+          test -f package-lock.json && echo "package-lock.json OK" || (echo "Lockfile missing" && exit 1)
+
+      - name: Commit & push lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "chore: add package-lock.json"
+          git push

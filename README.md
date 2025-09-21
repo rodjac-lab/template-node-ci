@@ -1,5 +1,16 @@
 # template-node-ci
 Template pour ma CI
+# Template Node CI
+
+Starter minimal pour projets Node/JS avec CI GitHub Actions, ESLint, Prettier et tests Vitest.
+
+## Prise en main
+
+```bash
+npm ci
+npm run lint
+npm run test
+
 template-node-ci/
 ├─ .github/
 │  └─ workflows/

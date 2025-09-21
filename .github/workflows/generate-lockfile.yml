@@ -1,0 +1,26 @@
+name: Generate lockfile
+
+on:
+  workflow_dispatch: {}   # tu le lances à la main depuis l'onglet Actions
+
+jobs:
+  gen-lock:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write    # autorise le commit
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Generate package-lock.json
+        run: npm install --no-audit --fund=false
+
+      - name: Commit lockfile
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "chore: add package-lock.json (generated via workflow)"
+          add: "package-lock.json"

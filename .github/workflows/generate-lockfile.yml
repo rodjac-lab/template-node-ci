@@ -1,39 +1,46 @@
 name: Generate lockfile
 
 on:
-  workflow_dispatch: {}   # tu le lances manuellement
+  workflow_dispatch:
 
 permissions:
-  contents: write         # autorise ce workflow à pousser des commits
+  contents: write
+  pull-requests: write
 
 jobs:
-  gen-lock:
+  generate:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true   # pour pousser avec GITHUB_TOKEN
 
-      - name: Setup Node
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 20
 
-      - name: Create lockfile (npm install)
-      # --no-audit et --fund=false pour éviter du bruit en CI
+      - name: Install dependencies
         run: npm install --no-audit --fund=false
 
-      - name: Show result
+      - name: Verify lockfile existence
         run: |
-          ls -la
-          test -f package-lock.json && echo "package-lock.json OK" || (echo "Lockfile missing" && exit 1)
+          if [ ! -f package-lock.json ]; then
+            echo "package-lock.json not found"
+            exit 1
+          fi
 
-      - name: Commit & push lockfile
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git diff --cached --quiet && echo "No changes to commit" || git commit -m "chore: add package-lock.json"
-          git push
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ci/add-lockfile
+          title: "chore: add package-lock.json"
+          commit-message: "chore: add package-lock.json"
+          add-paths: |
+            package-lock.json
+          body: |
+            ## Summary
+            - Add the generated package-lock.json file.
+            
+            ## Testing
+            - npm install --no-audit --fund=false

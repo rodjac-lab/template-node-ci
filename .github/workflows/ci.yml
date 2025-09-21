@@ -1,31 +1,36 @@
 name: CI
 
 on:
-  pull_request:
   push:
-    branches: [ main ]
+    branches:
+      - "**"
+  pull_request:
 
 jobs:
-  node-ci:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 20
 
-      - name: Install deps
-        run: npm ci
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            npm ci
+          else
+            npm install --no-audit --fund=false
+          fi
 
       - name: Lint
         run: npm run lint --if-present
 
-      - name: Type check
+      - name: Typecheck
         run: npm run typecheck --if-present
 
       - name: Test
